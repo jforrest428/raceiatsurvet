@@ -1,96 +1,44 @@
+<!DOCTYPE html>
 <html>
   <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/main.css" />
-    <style type="text/css">
+    <style>
       .container { padding-top: 15px; }
     </style>
-
-    <!-- Load MinnoJS from CDN -->
     <script>
       var scriptTag = document.createElement('script');
       scriptTag.src = 'https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js';
       scriptTag.onload = onLoad;
-      scriptTag.onreadystatechange = onLoad;
       document.head.appendChild(scriptTag);
-    </script>
 
-    <!-- Configure RequireJS for scoring modules -->
-    <script>
-      require.config({
-        paths: {
-          scorer: 'nogaScorer',
-          feedbacker: 'feedbacker'
-        }
-      });
-    </script>
-  </head>
-
-  <body>
-    <script>
       function onLoad() {
-        // Create and mount the main container
-        var container = document.createElement('div');
-        container.className = 'container';
-        var canvas = document.createElement('div');
-        container.appendChild(canvas);
-        document.body.appendChild(container);
+        require.config({
+          paths: {
+            scorer: 'nogaScorer',
+            feedbacker: 'feedbacker'
+          }
+        });
 
-        // Start the MinnoJS task
-        minnoJS(canvas, 'mgr.js');
+        require(['scorer', 'feedbacker'], function(scorer, feedbacker) {
+          var container = document.createElement('div');
+          container.className = 'container';
+          var canvas = document.createElement('div');
+          container.appendChild(canvas);
+          document.body.appendChild(container);
 
-        // When the task finishes
-        minnoJS.onEnd = function () {
-          require(['scorer'], function(scorerModule) {
-            let scorerObj = {};
-            scorerModule.scorer_init(scorerObj);
+          minnoJS(canvas, 'mgr.js');
 
-            // You MUST store logs globally for this to work
-            scorerObj.logs = window.piGlobalLogs;
-
-            scorerObj.addSettings({
-              condVar: 'condition',
-              cond1VarValues: ['block3', 'block6'],
-              cond2VarValues: ['block4', 'block7'],
-              parcelVar: 'block',
-              parcelValues: ['block3', 'block4', 'block6', 'block7'],
-              errorVar: 'score',
-              analyzedVar: 'latency',
-              errorLatency: {use:'penalty', penalty:600, useForSTD:true}
-            });
-
-            const result = scorerObj.computeD();
-            const dscore = result.D;
-
-            // Send to Qualtrics
-            Qualtrics.SurveyEngine.setEmbeddedData("iat_score", dscore);
-
-            // Optional: show feedback
-            require(['feedbacker'], function(feedbackerModule) {
-              let feedbackerObj = {};
-              feedbackerModule.feedbacker_init(feedbackerObj);
-              feedbackerObj.DScoreObj = result;
-
-              feedbackerObj.addSettings({
-                messageDef: [
-                  {cut: -0.65, message: "Strong preference for Black over White"},
-                  {cut: -0.35, message: "Moderate preference for Black over White"},
-                  {cut: -0.15, message: "Slight preference for Black over White"},
-                  {cut:  0.15, message: "No preference"},
-                  {cut:  0.35, message: "Slight preference for White over Black"},
-                  {cut:  0.65, message: "Moderate preference for White over Black"},
-                  {cut:  5.00, message: "Strong preference for White over Black"}
-                ]
-              });
-
-              const feedbackText = feedbackerObj.getFeedback(feedbackerObj);
-              alert(feedbackText); // Or render this to the DOM if you prefer
-            });
-
-            // Let Qualtrics continue
-            setTimeout(proceed, 100);
-          });
-        };
+          // wait for scoring to post to Qualtrics
+          minnoJS.onEnd = function () {
+            setTimeout(function() {
+              Qualtrics.SurveyEngine.setEmbeddedData("iat_score", scorer.score);
+              Qualtrics.SurveyEngine.setEmbeddedData("feedback", feedbacker.feedback);
+              Qualtrics.SurveyEngine.navClick('NextButton');
+            }, 100);
+          };
+        });
       }
     </script>
-  </body>
+  </head>
+  <body></body>
 </html>
