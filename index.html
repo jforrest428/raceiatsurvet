@@ -1,42 +1,96 @@
 <html>
-    <head>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/main.css" />
-		<style type="text/css">
-        .container {padding-top: 15px;}
-		</style>
-	
-        <script>
-            // load MinnoJS from the CDN (you probably don't need to change this)
-            var scriptTag                = document.createElement('script');
-            scriptTag.src                = 'https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js';
-            scriptTag.onload             = onLoad;
-            scriptTag.onreadystatechange = onLoad;
-            document.head.appendChild(scriptTag);
-        
-            // This function gets activated only after MinnoJS is loaded
-            function onLoad() {
-				// Create a div with class 'container' and id 'minno-app'
-				var container = document.createElement('div');
-				container.className = 'container';
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/main.css" />
+    <style type="text/css">
+      .container { padding-top: 15px; }
+    </style>
 
-				// Create the canvas object
-				var canvas = document.createElement('div');
+    <!-- Load MinnoJS from CDN -->
+    <script>
+      var scriptTag = document.createElement('script');
+      scriptTag.src = 'https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js';
+      scriptTag.onload = onLoad;
+      scriptTag.onreadystatechange = onLoad;
+      document.head.appendChild(scriptTag);
+    </script>
 
-				// Append the canvas object to the container
-				container.appendChild(canvas);
-			
+    <!-- Configure RequireJS for scoring modules -->
+    <script>
+      require.config({
+        paths: {
+          scorer: 'nogaScorer',
+          feedbacker: 'feedbacker'
+        }
+      });
+    </script>
+  </head>
 
-				// Append the container to the body
-				document.body.appendChild(container);
-                
-                // Run your study (just set the correct URL)
-                minnoJS(canvas, 'mgr.js');
-                
-                // We need to wait a few miliseconds for Qualtrics to register the value that we entered
-                minnoJS.onEnd = function () { setTimeout(proceed, 100); }
-            }
-        </script>
-    </head>
-    <body>
-    </body>
+  <body>
+    <script>
+      function onLoad() {
+        // Create and mount the main container
+        var container = document.createElement('div');
+        container.className = 'container';
+        var canvas = document.createElement('div');
+        container.appendChild(canvas);
+        document.body.appendChild(container);
+
+        // Start the MinnoJS task
+        minnoJS(canvas, 'mgr.js');
+
+        // When the task finishes
+        minnoJS.onEnd = function () {
+          require(['scorer'], function(scorerModule) {
+            let scorerObj = {};
+            scorerModule.scorer_init(scorerObj);
+
+            // You MUST store logs globally for this to work
+            scorerObj.logs = window.piGlobalLogs;
+
+            scorerObj.addSettings({
+              condVar: 'condition',
+              cond1VarValues: ['block3', 'block6'],
+              cond2VarValues: ['block4', 'block7'],
+              parcelVar: 'block',
+              parcelValues: ['block3', 'block4', 'block6', 'block7'],
+              errorVar: 'score',
+              analyzedVar: 'latency',
+              errorLatency: {use:'penalty', penalty:600, useForSTD:true}
+            });
+
+            const result = scorerObj.computeD();
+            const dscore = result.D;
+
+            // Send to Qualtrics
+            Qualtrics.SurveyEngine.setEmbeddedData("iat_score", dscore);
+
+            // Optional: show feedback
+            require(['feedbacker'], function(feedbackerModule) {
+              let feedbackerObj = {};
+              feedbackerModule.feedbacker_init(feedbackerObj);
+              feedbackerObj.DScoreObj = result;
+
+              feedbackerObj.addSettings({
+                messageDef: [
+                  {cut: -0.65, message: "Strong preference for Black over White"},
+                  {cut: -0.35, message: "Moderate preference for Black over White"},
+                  {cut: -0.15, message: "Slight preference for Black over White"},
+                  {cut:  0.15, message: "No preference"},
+                  {cut:  0.35, message: "Slight preference for White over Black"},
+                  {cut:  0.65, message: "Moderate preference for White over Black"},
+                  {cut:  5.00, message: "Strong preference for White over Black"}
+                ]
+              });
+
+              const feedbackText = feedbackerObj.getFeedback(feedbackerObj);
+              alert(feedbackText); // Or render this to the DOM if you prefer
+            });
+
+            // Let Qualtrics continue
+            setTimeout(proceed, 100);
+          });
+        };
+      }
+    </script>
+  </body>
 </html>
