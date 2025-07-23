@@ -44,16 +44,7 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 css : {color:'#0000FF','font-size':'1.8em'},
                 height : 4
             },
-            stimulusMedia : [
-                {word: global.negWords[0]},
-                {word: global.negWords[1]},
-                {word: global.negWords[2]},
-                {word: global.negWords[3]},
-                {word: global.negWords[4]},
-                {word: global.negWords[5]},
-                {word: global.negWords[6]},
-                {word: global.negWords[7]}
-            ],
+            stimulusMedia : global.negWords.map(word => ({word})),
             stimulusCss : {color:'#0000FF','font-size':'2.3em'}
         },
         attribute2 : {
@@ -63,16 +54,7 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 css : {color:'#0000FF','font-size':'1.8em'},
                 height : 4
             },
-            stimulusMedia : [
-                {word: global.posWords[0]},
-                {word: global.posWords[1]},
-                {word: global.posWords[2]},
-                {word: global.posWords[3]},
-                {word: global.posWords[4]},
-                {word: global.posWords[5]},
-                {word: global.posWords[6]},
-                {word: global.posWords[7]}
-            ],
+            stimulusMedia : global.posWords.map(word => ({word})),
             stimulusCss : {color:'#0000FF','font-size':'2.3em'}
         },
         base_url : {
@@ -92,11 +74,19 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
         onEnd: function(){
             const dScore = global.d ? global.d.D : null;
             const feedback = global.feedbackText || "No feedback available.";
-            console.log("📤 Posting IAT result", dScore, feedback);
-            window.parent.postMessage({
+
+            const result = {
                 iat_score: dScore,
                 iat_feedback: feedback
-            }, "*");
+            };
+
+            // Save result to Qualtrics textarea
+            if (typeof minnoJS !== 'undefined' && typeof minnoJS.logger === 'function') {
+                minnoJS.logger(JSON.stringify(result));
+            }
+
+            // Optional: Also post to parent frame
+            window.parent.postMessage(result, "*");
         }
     });
 });
