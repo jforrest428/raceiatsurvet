@@ -80,7 +80,6 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
         },
         isTouch : global.$isTouch,
 
-        // ✅ Added logger to capture trial data for scoring
         logger: function(info) {
             return {
                 latency: info.latency,
@@ -88,11 +87,15 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 condition: info.blockCongruent ? 'congruent' : 'incongruent',
                 stimulus: info.stimulus
             };
+        },
+
+        onEnd: function(){
+            const dScore = global.d ? global.d.D : null;
+            const feedback = global.feedbackText || "No feedback available.";
+            window.parent.postMessage({
+                iat_score: dScore,
+                iat_feedback: feedback
+            }, "*");
         }
     });
 });
-
-        isTouch : global.$isTouch
-    });
-});
-
