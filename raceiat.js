@@ -4,13 +4,13 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
 
     return iatExtension({
         category1 : {
-            name : global.blackLabels, //Will appear in the data.
+            name : global.blackLabels,
             title : {
-                media : {word : global.blackLabels}, //Name of the category presented in the task.
-                css : {color:'#31940F','font-size':'1.8em'}, //Style of the category title.
-                height : 4 //Used to position the "Or" in the combined block.
+                media : {word : global.blackLabels},
+                css : {color:'#31940F','font-size':'1.8em'},
+                height : 4
             }, 
-            stimulusMedia : [ //Stimuli content as PIP's media objects
+            stimulusMedia : [
                 {image: 'bm1_nc.jpg'},
                 {image: 'bm2_nc.jpg'},
                 {image: 'bm3_nc.jpg'},
@@ -18,17 +18,16 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 {image: 'bf2_nc.jpg'},                 
                 {image: 'bf3_nc.jpg'}     
             ],
-            //Stimulus css (style)
             stimulusCss : {color:'#31940F','font-size':'2.3em'}
         },    
         category2 : {
-            name : global.whiteLabels, //Will appear in the data.
+            name : global.whiteLabels,
             title : {
-                media : {word : global.whiteLabels}, //Name of the category presented in the task.
-                css : {color:'#31940F','font-size':'1.8em'}, //Style of the category title.
-                height : 4 //Used to position the "Or" in the combined block.
+                media : {word : global.whiteLabels},
+                css : {color:'#31940F','font-size':'1.8em'},
+                height : 4
             }, 
-            stimulusMedia : [ //Stimuli content as PIP's media objects
+            stimulusMedia : [
                 {image: 'wm1_nc.jpg'},
                 {image: 'wm2_nc.jpg'},
                 {image: 'wm3_nc.jpg'},
@@ -36,7 +35,6 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 {image: 'wf2_nc.jpg'},
                 {image: 'wf3_nc.jpg'}
             ],
-            //Stimulus css (style)
             stimulusCss : {color:'#31940F','font-size':'2.3em'}
         },
         attribute1 : {
@@ -44,9 +42,9 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
             title : {
                 media : {word : 'Bad words'},
                 css : {color:'#0000FF','font-size':'1.8em'},
-                height : 4 //Used to position the "Or" in the combined block.
+                height : 4
             },
-            stimulusMedia : [ //Stimuli content as PIP's media objects
+            stimulusMedia : [
                 {word: global.negWords[0]},
                 {word: global.negWords[1]},
                 {word: global.negWords[2]},
@@ -56,7 +54,6 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 {word: global.negWords[6]},
                 {word: global.negWords[7]}
             ],
-            //Stimulus css
             stimulusCss : {color:'#0000FF','font-size':'2.3em'}
         },
         attribute2 : {
@@ -64,9 +61,9 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
             title : {
                 media : {word : 'Good words'},
                 css : {color:'#0000FF','font-size':'1.8em'},
-                height : 4 //Used to position the "Or" in the combined block.
+                height : 4
             },
-            stimulusMedia : [ //Stimuli content as PIP's media objects
+            stimulusMedia : [
                 {word: global.posWords[0]},
                 {word: global.posWords[1]},
                 {word: global.posWords[2]},
@@ -76,12 +73,25 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
                 {word: global.posWords[6]},
                 {word: global.posWords[7]}
             ],
-            //Stimulus css
             stimulusCss : {color:'#0000FF','font-size':'2.3em'}
         },
-        base_url : {//Where are your images at?
+        base_url : {
             image : global.baseURL
         },
+        isTouch : global.$isTouch,
+
+        // ✅ Added logger to capture trial data for scoring
+        logger: function(info) {
+            return {
+                latency: info.latency,
+                score: info.score,
+                condition: info.blockCongruent ? 'congruent' : 'incongruent',
+                stimulus: info.stimulus
+            };
+        }
+    });
+});
+
         isTouch : global.$isTouch
     });
 });
