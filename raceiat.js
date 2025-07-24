@@ -2,6 +2,36 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
     let API = new APIConstructor();
     let global = API.getGlobal();
 
+    // ✅ Logger setup for Qualtrics text entry (CSV format)
+    API.addSettings('logger', {
+        onRow: function(logName, log, settings, ctx){
+            if (!ctx.logs) ctx.logs = [];
+            ctx.logs.push(log);
+        },
+        onEnd: function(name, settings, ctx){
+            return ctx.logs;
+        },
+        serialize: function(name, logs){
+            const headers = ['alias', 'latency', 'block', 'stimulus', 'correct'];
+            const content = logs.map(log => [
+                log.data.alias || '',
+                log.latency || '',
+                log.data.block || '',
+                log.data.stimulus || '',
+                log.data.correct || ''
+            ]);
+            content.unshift(headers);
+            return content.map(row => row.join(',')).join('\n');
+        },
+        send: function(name, serialized){
+            window.minnoJS.logger(serialized); // writes to Qualtrics text box
+        }
+    });
+
+    // ✅ Advance to next question after task
+    API.addSettings('onEnd', window.minnoJS.onEnd);
+
+    // ✅ Your IAT config below (unchanged logic)
     return iatExtension({
         category1 : {
             name : global.blackLabels,
@@ -60,33 +90,6 @@ define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/iat10.
         base_url : {
             image : global.baseURL
         },
-        isTouch : global.$isTouch,
-
-        logger: function(info) {
-            return {
-                latency: info.latency,
-                score: info.score,
-                condition: info.blockCongruent ? 'congruent' : 'incongruent',
-                stimulus: info.stimulus
-            };
-        },
-
-        onEnd: function(){
-            const dScore = global.d ? global.d.D : null;
-            const feedback = global.feedbackText || "No feedback available.";
-
-            const result = {
-                iat_score: dScore,
-                iat_feedback: feedback
-            };
-
-            // Save result to Qualtrics textarea
-            if (typeof minnoJS !== 'undefined' && typeof minnoJS.logger === 'function') {
-                minnoJS.logger(JSON.stringify(result));
-            }
-
-            // Optional: Also post to parent frame
-            window.parent.postMessage(result, "*");
-        }
+        isTouch : global.$isTouch
     });
 });
